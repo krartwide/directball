@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: Pretendard;
+  src: url("./assets/fonts/Pretendard-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Pretendard;
+  src: url("./assets/fonts/Pretendard-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Black Han Sans";
+  src: url("./assets/fonts/BlackHanSans.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chivo Mono";
+  src: url("./assets/fonts/ChivoMono-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chivo Mono";
+  src: url("./assets/fonts/ChivoMono-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-display: "Black Han Sans", Pretendard, sans-serif;
+  --font-mono: "Chivo Mono", ui-monospace, monospace;
+  --color-ink: #07110c;
+  --color-panel: #102019;
+  --color-panel-2: #173026;
+  --color-line: #2a4638;
+  --color-foam: #e7f6ee;
+  --color-mist: #93b3a2;
+  --color-amber: #f0b429;
+  --color-teal: #3ddecb;
+  --color-clay: #c4553a;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--color-foam);
+  background:
+    radial-gradient(900px 420px at 0% -10%, rgba(240, 180, 41, 0.14), transparent 55%),
+    radial-gradient(800px 480px at 100% 0%, rgba(61, 222, 203, 0.08), transparent 50%),
+    var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: #f0b429;
+  color: #1a1203;
+}
