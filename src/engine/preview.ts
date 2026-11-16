@@ -14,26 +14,48 @@ export class PoseStage {
   private clip: Clip | null = null
   private time = 0
   private last = 0
-  private theta = 0.4
-  private phi = 1.15
-  private radius = 3.6
+  private theta = 0.15
+  private phi = 1.05
+  private radius = 3.2
   private dragging = false
   private pointer = { x: 0, y: 0 }
 
   constructor(canvas: HTMLCanvasElement) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' })
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    this.renderer.toneMappingExposure = 1.1
+    this.renderer.shadowMap.enabled = true
     this.renderer.setClearColor(0x000000, 0)
+    this.renderer.shadowMap.type = THREE.PCFShadowMap
     const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(1.6, 40),
-      new THREE.MeshStandardMaterial({ color: '#1c7a3c', roughness: 1 }),
+      new THREE.CircleGeometry(1.8, 48),
+      new THREE.MeshStandardMaterial({ color: '#249a48', roughness: 0.9 }),
     )
     ground.rotation.x = -Math.PI / 2
+    ground.receiveShadow = true
     this.scene.add(ground)
-    this.scene.add(new THREE.HemisphereLight('#d9efe4', '#1a3a24', 1.1))
-    const key = new THREE.DirectionalLight('#fff4dd', 2.2)
-    key.position.set(2, 4, 3)
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(1.55, 1.78, 48),
+      new THREE.MeshStandardMaterial({ color: '#e8d4a0', roughness: 0.85 }),
+    )
+    ring.rotation.x = -Math.PI / 2
+    ring.position.y = 0.002
+    this.scene.add(ring)
+    this.scene.add(new THREE.HemisphereLight('#f0faf4', '#3a6a48', 1.45))
+    this.scene.add(new THREE.AmbientLight('#fff4e0', 0.45))
+    const key = new THREE.DirectionalLight('#fff4e0', 3.2)
+    key.position.set(2.6, 5.0, 3.4)
+    key.castShadow = true
+    key.shadow.mapSize.set(1024, 1024)
+    key.shadow.bias = -0.0003
     this.scene.add(key)
+    const rim = new THREE.DirectionalLight('#a8d0ff', 1.0)
+    rim.position.set(-3.2, 2.4, -2.2)
+    this.scene.add(rim)
+    const fill = new THREE.DirectionalLight('#ffe8c8', 0.7)
+    fill.position.set(0, 3, -4)
+    this.scene.add(fill)
     canvas.addEventListener('pointerdown', this.down)
     canvas.addEventListener('pointermove', this.move)
     window.addEventListener('pointerup', this.up)
@@ -100,8 +122,9 @@ export class PoseStage {
   private apply() {
     if (!this.figure || !this.player || !this.clip) return
     const pose = sampleClip(this.clip, this.time)
-    this.figure.setPlace(pose, 0.25, 0, 0, 0)
-    this.figure.setGear({ bat: true, glove: true, hat: 'cap' })
+    // Face the camera (+Z) so the stylized face reads in the editor.
+    this.figure.setPlace(pose, 0, 0, 0, 0)
+    this.figure.setGear({ bat: true, glove: true, hat: 'none' })
   }
 
   private loop = (now: number) => {

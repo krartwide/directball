@@ -32,24 +32,61 @@ function drawField(stadium: Stadium): THREE.CanvasTexture {
   canvas.height = size
   const ctx = canvas.getContext('2d')
   if (!ctx) return new THREE.CanvasTexture(canvas)
-  const grassA = stadium.turf === 'artificial' ? '#1f8a45' : '#1c7a3c'
-  const grassB = stadium.turf === 'artificial' ? '#1a7a3c' : '#166834'
-  for (let i = 0; i < size; i += 10) {
-    ctx.fillStyle = (i / 10) % 2 === 0 ? grassA : grassB
-    ctx.fillRect(i, 0, 10, size)
+  const grassA = stadium.turf === 'artificial' ? '#249e52' : '#2aa854'
+  const grassB = stadium.turf === 'artificial' ? '#1d8a45' : '#228a46'
+  const grassC = stadium.turf === 'artificial' ? '#17753a' : '#1b743c'
+  const grassD = stadium.turf === 'artificial' ? '#126432' : '#166434'
+  // mowing stripes — V26-style broadcast look
+  for (let i = 0; i < size; i += 22) {
+    const band = Math.floor(i / 22) % 4
+    ctx.fillStyle = band === 0 ? grassA : band === 1 ? grassB : band === 2 ? grassC : grassD
+    ctx.fillRect(i, 0, 22, size)
   }
-  ctx.fillStyle = '#c6a36e'
+  // fine grain
+  const noise = ctx.getImageData(0, 0, size, size)
+  for (let i = 0; i < noise.data.length; i += 12) {
+    const n = ((i * 17) % 21) - 10
+    noise.data[i] = Math.max(0, Math.min(255, noise.data[i]! + n))
+    noise.data[i + 1] = Math.max(0, Math.min(255, noise.data[i + 1]! + n))
+    noise.data[i + 2] = Math.max(0, Math.min(255, noise.data[i + 2]! + Math.floor(n * 0.45)))
+  }
+  ctx.putImageData(noise, 0, 0)
+  // warning track
+  ctx.fillStyle = '#d2b888'
+  ctx.beginPath()
+  ctx.moveTo(...px(Math.sin((-45 * Math.PI) / 180) * (stadium.lf - 6), Math.cos((-45 * Math.PI) / 180) * (stadium.lf - 6)))
+  for (let a = -45; a <= 45; a += 3) {
+    const r = fenceDistance(a, stadium) - 1.0
+    const rad = (a * Math.PI) / 180
+    ctx.lineTo(...px(Math.sin(rad) * r, Math.cos(rad) * r))
+  }
+  for (let a = 45; a >= -45; a -= 3) {
+    const r = fenceDistance(a, stadium) - 7.2
+    const rad = (a * Math.PI) / 180
+    ctx.lineTo(...px(Math.sin(rad) * r, Math.cos(rad) * r))
+  }
+  ctx.fill()
   const dirt = (x: number, z: number, rx: number, rz: number) => {
     const [cx, cy] = px(x, z, size)
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, (rx / 160) * size)
+    grad.addColorStop(0, '#d8b478')
+    grad.addColorStop(0.55, '#c49a5c')
+    grad.addColorStop(0.85, '#b08248')
+    grad.addColorStop(1, '#946838')
+    ctx.fillStyle = grad
     ctx.beginPath()
     ctx.ellipse(cx, cy, (rx / 160) * size, (rz / 160) * size, 0, 0, Math.PI * 2)
     ctx.fill()
   }
-  dirt(0, 18, 23, 20)
-  dirt(0, 1.2, 5.5, 4.2)
+  dirt(0, 18, 24, 21)
+  dirt(0, 1.15, 5.8, 4.4)
+  // base cutouts
+  for (const base of [BASES.first, BASES.second, BASES.third]) {
+    dirt(base.x, base.z, 2.2, 2.0)
+  }
   ctx.lineCap = 'round'
-  ctx.strokeStyle = '#c6a36e'
-  ctx.lineWidth = (2.4 / 160) * size
+  ctx.strokeStyle = '#e0c490'
+  ctx.lineWidth = (2.8 / 160) * size
   const path = (x0: number, z0: number, x1: number, z1: number) => {
     const a = px(x0, z0, size)
     const b = px(x1, z1, size)
@@ -62,20 +99,19 @@ function drawField(stadium: Stadium): THREE.CanvasTexture {
   path(BASES.first.x, BASES.first.z, BASES.second.x, BASES.second.z)
   path(BASES.second.x, BASES.second.z, BASES.third.x, BASES.third.z)
   path(BASES.third.x, BASES.third.z, 0, 0)
-  ctx.fillStyle = '#d9c7a0'
-  ctx.beginPath()
-  ctx.moveTo(...px(Math.sin(-45 * Math.PI / 180) * (stadium.lf - 6), Math.cos(-45 * Math.PI / 180) * (stadium.lf - 6)))
-  for (let a = -45; a <= 45; a += 3) {
-    const r = fenceDistance(a, stadium) - 1.2
-    const rad = (a * Math.PI) / 180
-    ctx.lineTo(...px(Math.sin(rad) * r, Math.cos(rad) * r))
+  // batter boxes
+  ctx.fillStyle = '#e2c792'
+  for (const side of [-1, 1]) {
+    const [bx, by] = px(side * 1.05, -0.55, size)
+    ctx.fillRect(bx - 10, by - 18, 20, 36)
   }
-  for (let a = 45; a >= -45; a -= 3) {
-    const r = fenceDistance(a, stadium) - 6.5
-    const rad = (a * Math.PI) / 180
-    ctx.lineTo(...px(Math.sin(rad) * r, Math.cos(rad) * r))
+  // chalk diamonds
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'
+  ctx.lineWidth = (0.4 / 160) * size
+  for (const base of [BASES.first, BASES.second, BASES.third]) {
+    const [cx, cy] = px(base.x, base.z, size)
+    ctx.strokeRect(cx - 9, cy - 9, 18, 18)
   }
-  ctx.fill()
   const tex = new THREE.CanvasTexture(canvas)
   tex.colorSpace = THREE.SRGBColorSpace
   tex.anisotropy = 8
@@ -83,7 +119,7 @@ function drawField(stadium: Stadium): THREE.CanvasTexture {
 }
 
 function wallMaterial(color: string): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.04 })
+  return new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.06 })
 }
 
 export function buildPark(stadium: Stadium, night: boolean): Park {
@@ -100,7 +136,12 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
   const field = keep(
     new THREE.Mesh(
       new THREE.PlaneGeometry(160, 160),
-      new THREE.MeshStandardMaterial({ map: drawField(stadium), roughness: 0.95, metalness: 0 }),
+      new THREE.MeshStandardMaterial({
+        map: drawField(stadium),
+        roughness: 0.82,
+        metalness: 0.03,
+        envMapIntensity: 0.45,
+      }),
     ),
   )
   field.rotation.x = -Math.PI / 2
@@ -109,8 +150,8 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
   group.add(field)
   const apron = keep(
     new THREE.Mesh(
-      new THREE.CircleGeometry(52, 40),
-      new THREE.MeshStandardMaterial({ color: '#141c18', roughness: 1 }),
+      new THREE.CircleGeometry(58, 48),
+      new THREE.MeshStandardMaterial({ color: '#1a2420', roughness: 1 }),
     ),
   )
   apron.rotation.x = -Math.PI / 2
@@ -118,14 +159,44 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
   apron.receiveShadow = true
   group.add(apron)
 
+  // stadium bowl — stepped bleacher decks (V26 broadcast silhouette)
+  const bowlMat = new THREE.MeshStandardMaterial({ color: '#3a4450', roughness: 0.82, metalness: 0.1 })
+  const railMat = new THREE.MeshStandardMaterial({ color: '#d8dde4', roughness: 0.45, metalness: 0.25 })
+  materials.push(bowlMat, railMat)
+  for (let deck = 0; deck < 3; deck += 1) {
+    for (let step = 0; step < 5; step += 1) {
+      const radius = 22 + deck * 9 + step * 1.35
+      const y = 1.1 + deck * 4.6 + step * 0.72
+      const ring = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius + 1.2, radius, 0.55, 64, 1, true, Math.PI * 0.42, Math.PI * 1.16),
+        bowlMat,
+      )
+      disposables.push(ring.geometry)
+      ring.position.set(0, y, 3)
+      ring.castShadow = true
+      ring.receiveShadow = true
+      group.add(ring)
+    }
+    const rail = new THREE.Mesh(
+      new THREE.TorusGeometry(26 + deck * 9, 0.08, 6, 64, Math.PI * 1.16),
+      railMat,
+    )
+    disposables.push(rail.geometry)
+    rail.rotation.x = Math.PI / 2
+    rail.rotation.z = Math.PI * 0.42
+    rail.position.set(0, 4.2 + deck * 4.6, 3)
+    group.add(rail)
+  }
+
   const mound = keep(
     new THREE.Mesh(
-      new THREE.CylinderGeometry(2.6, 2.9, 0.28, 24),
-      new THREE.MeshStandardMaterial({ color: '#c6a36e', roughness: 1 }),
+      new THREE.CylinderGeometry(2.7, 3.05, 0.32, 28),
+      new THREE.MeshStandardMaterial({ color: '#d0ac72', roughness: 0.92 }),
     ),
   )
-  mound.position.set(0, 0.14, MOUND_M - 0.2)
+  mound.position.set(0, 0.16, MOUND_M - 0.2)
   mound.receiveShadow = true
+  mound.castShadow = true
   group.add(mound)
   const rubber = keep(
     new THREE.Mesh(
@@ -166,7 +237,7 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
     group.add(bag)
   }
 
-  const chalk = new THREE.MeshStandardMaterial({ color: '#f3f1ea', roughness: 0.8 })
+  const chalk = new THREE.MeshStandardMaterial({ color: '#e8e4da', roughness: 0.92, metalness: 0 })
   materials.push(chalk)
   const foul = (angleDeg: number, dist: number) => {
     const rad = (angleDeg * Math.PI) / 180
@@ -189,9 +260,10 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
   foul(-45, stadium.lf)
   foul(45, stadium.rf)
 
-  const pad = wallMaterial('#0e3b28')
-  const monsterMat = wallMaterial('#1f6b3a')
+  const pad = wallMaterial('#0f4a30')
+  const monsterMat = wallMaterial('#24804a')
   materials.push(pad, monsterMat)
+  const adColors = ['#f4f1e6', '#1e5bb8', '#c81d25', '#222222', '#e8b84a', stadium.accent || '#f0b429']
   for (let angle = -45; angle < 45; angle += 3) {
     const a0 = (angle * Math.PI) / 180
     const a1 = ((angle + 3) * Math.PI) / 180
@@ -210,6 +282,25 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
     mesh.castShadow = true
     mesh.receiveShadow = true
     group.add(mesh)
+    // outfield advertising ribbon
+    if (angle % 6 === 0) {
+      const adIdx = Math.abs(Math.floor((angle + 45) / 6)) % adColors.length
+      const adMat = new THREE.MeshStandardMaterial({
+        color: adColors[adIdx] ?? '#f4f1e6',
+        roughness: 0.55,
+        metalness: 0.05,
+        emissive: night ? '#222018' : '#000000',
+        emissiveIntensity: night ? 0.15 : 0,
+      })
+      materials.push(adMat)
+      const ad = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, len * 1.8), adMat)
+      disposables.push(ad.geometry)
+      const mid = fenceDistance(angle + 1.5, stadium) - 0.6
+      const rad = ((angle + 1.5) * Math.PI) / 180
+      ad.position.set(Math.sin(rad) * mid, 1.0, Math.cos(rad) * mid)
+      ad.rotation.y = Math.atan2(x1 - x0, z1 - z0)
+      group.add(ad)
+    }
   }
 
   const label = (text: string, angle: number) => {
@@ -255,7 +346,7 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
   board.rotation.y = Math.PI
   group.add(board)
 
-  const seatGeo = new THREE.CapsuleGeometry(0.16, 0.38, 2, 6)
+  const seatGeo = new THREE.CapsuleGeometry(0.14, 0.42, 3, 8)
   disposables.push(seatGeo)
   const positions: number[] = []
   const yaws: number[] = []
@@ -289,7 +380,13 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
   }
   const crowd = new THREE.InstancedMesh(
     seatGeo,
-    new THREE.MeshStandardMaterial({ roughness: 0.8, vertexColors: false }),
+    new THREE.MeshStandardMaterial({
+      roughness: 0.68,
+      metalness: 0.04,
+      vertexColors: false,
+      emissive: night ? '#101018' : '#000000',
+      emissiveIntensity: night ? 0.12 : 0,
+    }),
     positions.length / 3,
   )
   materials.push(crowd.material as THREE.Material)
@@ -298,10 +395,11 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
   for (let i = 0; i < positions.length / 3; i += 1) {
     dummy.position.set(positions[i * 3] ?? 0, positions[i * 3 + 1] ?? 0, positions[i * 3 + 2] ?? 0)
     dummy.rotation.y = yaws[i] ?? 0
-    dummy.scale.set(1.45, 1.15, 1.45)
+    dummy.scale.set(1.65, 1.35, 1.65)
     dummy.updateMatrix()
     crowd.setMatrixAt(i, dummy.matrix)
     tint.setRGB(cols[i * 3] ?? 1, cols[i * 3 + 1] ?? 1, cols[i * 3 + 2] ?? 1)
+    tint.offsetHSL(0, 0.08, night ? 0.06 : 0)
     crowd.setColorAt(i, tint)
   }
   crowd.instanceMatrix.needsUpdate = true
@@ -356,47 +454,81 @@ export function buildPark(stadium: Stadium, night: boolean): Park {
       new THREE.ShaderMaterial({
         side: THREE.BackSide,
         uniforms: {
-          top: { value: new THREE.Color(night ? '#071018' : stadium.skyTop) },
-          horizon: { value: new THREE.Color(night ? '#18202b' : stadium.skyHorizon) },
+          top: { value: new THREE.Color(night ? '#0a1524' : stadium.skyTop) },
+          horizon: { value: new THREE.Color(night ? '#2a3548' : stadium.skyHorizon) },
         },
         vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
         fragmentShader:
-          'varying vec3 vP; uniform vec3 top; uniform vec3 horizon; void main(){ float h = normalize(vP).y; gl_FragColor = vec4(mix(horizon, top, smoothstep(-0.05, 0.62, h)), 1.0); }',
+          'varying vec3 vP; uniform vec3 top; uniform vec3 horizon; void main(){ float h = normalize(vP).y; gl_FragColor = vec4(mix(horizon, top, smoothstep(-0.08, 0.55, h)), 1.0); }',
       }),
     ),
   )
   group.add(sky)
 
-  const hemi = new THREE.HemisphereLight(night ? '#b7c6d6' : '#f2efe4', night ? '#243628' : '#3d6a32', night ? 0.72 : 0.9)
+  // broadcast stadium lighting — bright but not washed out
+  const hemi = new THREE.HemisphereLight(night ? '#c8d6ea' : '#fff6e8', night ? '#2e4e38' : '#4d8a45', night ? 1.05 : 1.15)
   group.add(hemi)
-  const sun = new THREE.DirectionalLight(night ? '#d5e2f0' : '#fff5e4', night ? 0.85 : 2.2)
-  sun.position.set(-28, 48, 12)
+  const amb = new THREE.AmbientLight(night ? '#8898b0' : '#fff0d8', night ? 0.32 : 0.28)
+  group.add(amb)
+  const sun = new THREE.DirectionalLight(night ? '#eef2ff' : '#fff2d8', night ? 1.55 : 2.6)
+  sun.position.set(-22, 42, 18)
   sun.castShadow = true
   sun.shadow.mapSize.set(2048, 2048)
-  sun.shadow.camera.near = 10
-  sun.shadow.camera.far = 140
-  sun.shadow.camera.left = -50
-  sun.shadow.camera.right = 50
-  sun.shadow.camera.top = 50
-  sun.shadow.camera.bottom = -50
+  sun.shadow.bias = -0.0002
+  sun.shadow.normalBias = 0.03
+  sun.shadow.camera.near = 8
+  sun.shadow.camera.far = 150
+  sun.shadow.camera.left = -55
+  sun.shadow.camera.right = 55
+  sun.shadow.camera.top = 55
+  sun.shadow.camera.bottom = -55
   group.add(sun)
+  const fill = new THREE.DirectionalLight(night ? '#9ab4e8' : '#b8d8ff', night ? 0.55 : 0.55)
+  fill.position.set(30, 24, -10)
+  group.add(fill)
+  const back = new THREE.DirectionalLight(night ? '#ffd9a0' : '#ffe8c8', night ? 0.4 : 0.35)
+  back.position.set(0, 18, -40)
+  group.add(back)
   if (night || stadium.dome) {
     const spots: Array<[number, number, number]> = [
       [-78, 8, 18],
       [78, 8, 18],
       [-70, 96, 36],
       [70, 96, 36],
+      [-40, -12, 8],
+      [40, -12, 8],
     ]
     for (const [x, z, aim] of spots) {
       const pole = keep(
         new THREE.Mesh(
-          new THREE.CylinderGeometry(0.18, 0.28, 36, 6),
-          new THREE.MeshStandardMaterial({ color: '#2a3038', metalness: 0.4, roughness: 0.45 }),
+          new THREE.CylinderGeometry(0.22, 0.32, 36, 8),
+          new THREE.MeshStandardMaterial({ color: '#2a3038', metalness: 0.55, roughness: 0.4 }),
         ),
       )
       pole.position.set(x, 18, z)
       group.add(pole)
-      const spot = new THREE.SpotLight('#fff1d0', stadium.dome || night ? 4200 : 1600, 0, 0.7, 0.45, 2)
+      const lamp = keep(
+        new THREE.Mesh(
+          new THREE.BoxGeometry(3.2, 0.45, 1.4),
+          new THREE.MeshStandardMaterial({
+            color: '#fff8e0',
+            emissive: '#fff4cc',
+            emissiveIntensity: night ? 2.6 : 0.9,
+            roughness: 0.3,
+          }),
+        ),
+      )
+      lamp.position.set(x, 34.2, z)
+      group.add(lamp)
+      const glow = keep(
+        new THREE.Mesh(
+          new THREE.SphereGeometry(1.6, 12, 10),
+          new THREE.MeshBasicMaterial({ color: '#fff6d0', transparent: true, opacity: night ? 0.16 : 0.06 }),
+        ),
+      )
+      glow.position.set(x, 34, z)
+      group.add(glow)
+      const spot = new THREE.SpotLight('#fff4d8', stadium.dome || night ? 6500 : 2200, 160, 0.68, 0.32, 1.65)
       spot.position.set(x, 34, z)
       spot.target.position.set(0, 0, aim)
       group.add(spot, spot.target)

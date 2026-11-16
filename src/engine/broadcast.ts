@@ -103,9 +103,10 @@ export class BroadcastEngine {
   private lastHud: Hud | null = null
 
   constructor(gl: HTMLCanvasElement, overlay: HTMLCanvasElement) {
-    this.renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: true, alpha: false, preserveDrawingBuffer: true })
+    this.renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: true, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' })
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    this.renderer.toneMappingExposure = 1.05
     this.renderer.shadowMap.enabled = true
     this.renderer.shadowMap.type = THREE.PCFShadowMap
     this.overlay = overlay
@@ -134,8 +135,8 @@ export class BroadcastEngine {
     const away = teams.find((team) => team.id === match.awayTeamId)
     const stadium = stadiumById(match.stadiumId)
     this.night = match.night || stadium.dome
-    this.renderer.toneMappingExposure = this.night ? 0.86 : 1.05
-    this.scene.fog = new THREE.Fog(this.night ? '#101820' : stadium.haze, this.night ? 55 : 80, 240)
+    this.renderer.toneMappingExposure = this.night ? 1.08 : 1.12
+    this.scene.fog = new THREE.Fog(this.night ? '#152028' : stadium.haze, this.night ? 85 : 100, 260)
     this.park = buildPark(stadium, this.night)
     this.scene.add(this.park.group)
     const involved = players.filter((player) => player.teamId === match.homeTeamId || player.teamId === match.awayTeamId)
@@ -329,9 +330,10 @@ export class BroadcastEngine {
     if (this.playing && !this.exporting) {
       this.time = Math.min(this.duration, this.time + dt * this.speed)
       if (this.time >= this.duration) this.playing = false
-      this.renderAt(this.time)
       this.emit()
     }
+    // Keep the current frame painted while paused so camera/seek previews stick.
+    if (!this.exporting) this.renderAt(this.time)
     this.raf = requestAnimationFrame(this.loop)
   }
 
