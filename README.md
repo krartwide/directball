@@ -20,6 +20,8 @@ npm run preview
 
 `dist`를 GitHub Pages에 올리면 됩니다. 자산 경로는 상대 경로(`./`)라 저장소 하위 경로에서도 동작합니다. 주소는 해시 라우트라 서버 재작성 없이 페이지가 열립니다.
 
+GitHub에 저장소를 만든 뒤 Settings → Pages에서 Source를 **GitHub Actions**로 두면, `main`에 push할 때마다 `.github/workflows/pages.yml`이 `dist`를 배포합니다. 저장소 이름이 `username.github.io`면 루트에, 아니면 `https://username.github.io/저장소이름/`에 열립니다.
+
 ## 만드는 순서
 
 1. 구단에서 이름, 색, 엠블럼을 정합니다.

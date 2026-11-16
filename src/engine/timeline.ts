@@ -879,8 +879,8 @@ function addPitchCue(opts: {
         const sample = sampleAt(contact.samples, Math.max(0, local - tPlate))
         return look([sample.x + 14, sample.y + 7, sample.z - 12], [sample.x, Math.max(1, sample.y), sample.z], 28)
       }
-      if (local > tPlate) return look([0, 2.2, -6.5], [0, 1.3, 4], 30)
-      return look([0, 12.5, 70], [0, 1.25, 8], 15)
+      if (local > tPlate) return look([0, 2.0, -5.2], [0, 1.35, 5], 28)
+      return look([0, 8.5, 52], [0, 1.35, 6], 18)
     },
     hud: (local) =>
       opts.hudOf({

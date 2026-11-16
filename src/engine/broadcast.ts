@@ -13,14 +13,14 @@ import { smooth } from '../lib/field.ts'
 export type CameraLock = 'auto' | 'cf' | 'first' | 'third' | 'low' | 'high' | 'abs' | 'sky' | 'side'
 
 const LOCKS: Record<Exclude<CameraLock, 'auto'>, CamFrame> = {
-  cf: look([0, 12.5, 70], [0, 1.25, 8], 15),
-  first: look([32, 8, 16], [0, 1.2, 12], 28),
-  third: look([-32, 8, 16], [0, 1.2, 12], 28),
-  low: look([0, 1.7, -7], [0, 1.4, 16], 26),
-  high: look([0, 18, -20], [0, 1, 30], 36),
-  abs: look([0, 1.65, -2.3], [0, 1.15, 16], 11),
-  sky: look([40, 36, -8], [0, 0, 30], 42),
-  side: look([4.2, 1.6, 1.2], [-0.4, 1.4, 0.2], 22),
+  cf: look([0, 8.5, 52], [0, 1.35, 6], 18),
+  first: look([24, 5.5, 12], [0, 1.3, 10], 30),
+  third: look([-24, 5.5, 12], [0, 1.3, 10], 30),
+  low: look([0, 1.55, -5.5], [0, 1.35, 14], 28),
+  high: look([0, 14, -14], [0, 1.2, 22], 34),
+  abs: look([0, 1.55, -1.9], [0, 1.15, 14], 12),
+  sky: look([28, 28, -6], [0, 0.5, 24], 40),
+  side: look([3.6, 1.55, 1.0], [-0.3, 1.35, 0.2], 24),
 }
 
 function ballMaterial() {
